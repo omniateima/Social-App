@@ -11,6 +11,7 @@ import * as dbService from "./../../DB/dbService.js";
 import { compareHash, hash } from "../../utils/hashing/hash.js";
 import { encrypt } from "../../utils/encryption//encryption.js";
 import cloudinary from "../../utils/file Uploading/cloudinaryConfig.js";
+import { areFriends, requestExists } from "../../utils/helpers/checkFriends.js";
 
 export const getProfile = asyncHandler(async (req, res, next) => {
   const user = await dbService.findOne({
@@ -21,6 +22,7 @@ export const getProfile = asyncHandler(async (req, res, next) => {
         path: "viewers.userId",
         select: "userName email image -_id",
       },
+      { path: "friends" },
     ],
   });
 
@@ -41,7 +43,7 @@ export const shareProfile = asyncHandler(async (req, res, next) => {
       filter: { _id: profileId, isDeleted: false },
     });
     if (!user) return next(new Error("User not found", { cause: 404 }));
-    if(user.blockedUsers.includes(req.user._id))
+    if (user.blockedUsers.includes(req.user._id))
       return next(new Error("You are blocked", { cause: 404 }));
 
     const viewerIndex = user.viewers.findIndex(
@@ -272,8 +274,7 @@ export const blockUser = asyncHandler(async (req, res, next) => {
   });
   if (!user) return next(new Error("User not found", { cause: 404 }));
 
-  if (!req.user.blockedUsers)
-    req.user.blockedUsers = []
+  if (!req.user.blockedUsers) req.user.blockedUsers = [];
   else if (req.user.blockedUsers.includes(user._id))
     return next(new Error("User already blocked!", { cause: 401 }));
 
@@ -287,4 +288,54 @@ export const blockUser = asyncHandler(async (req, res, next) => {
   return res
     .status(200)
     .json({ success: true, message: "User blocked successfully" });
+});
+
+export const sendFriendRequest = asyncHandler(async (req, res, next) => {
+  const { friendId } = req.params; /// reciver
+  const user = req.user; /// sender
+
+  const friend = await dbService.findOne({
+    model: UserModel,
+    filter: { _id: friendId, isDeleted: false },
+  });
+  if (!friend) return next(new Error("Friend Not Found", { cause: 404 }));
+
+  if (areFriends(user, friend) || requestExists(user, friend)) {
+    return next(new Error("Cannot send request!!"));
+  }
+
+  friend.friendRequests.push(user._id);
+  await friend.save();
+
+  return res
+    .status(200)
+    .json({ success: true, message: "send friend request successfully" });
+});
+
+export const acceptFriendRequest = asyncHandler(async (req, res, next) => {
+  const { friendId } = req.params; /// sender
+  const user = req.user; /// reciver
+
+  const friend = await dbService.findOne({
+    model: UserModel,
+    filter: { _id: friendId, isDeleted: false },
+  });
+  if (!friend) return next(new Error("Friend Not Found", { cause: 404 }));
+
+  if (areFriends(user, friend)) {
+    return next(new Error("Already Friends", { cause: 400 }));
+  }
+
+  friend.friends.push(user._id);
+
+  user.friends.push(friend._id);
+
+  user.friendRequests = user.friendRequests
+    .map(String)
+    .filter((id) => id !== friend._id.toString());
+
+  await friend.save();
+  await user.save();
+
+  return res.status(200).json({ success: true, message: "Done" });
 });

@@ -1,5 +1,5 @@
-import { asyncHandler } from "../../utils/errorHandling/asyncHandler.js";
 import { nanoid } from "nanoid";
+import { asyncHandler } from "../../utils/errorHandling/asyncHandler.js";
 import cloudinary from "../../utils/file Uploading/cloudinaryConfig.js";
 import * as dbService from "./../../DB/dbService.js";
 import PostModel from "../../DB/models/post.model.js";
@@ -173,24 +173,22 @@ export const getPost = asyncHandler(async (req, res, next) => {
 
 export const activePosts = asyncHandler(async (req, res, next) => {
   let posts;
+  //pagination
+  let { page } = req.query;
   if (req.user.role === roleType.Admin) {
-    posts = await dbService.find({
-      model: PostModel,
-      filter: { isDeleted: false },
-      populate: [
+    posts = await PostModel.find({ isDeleted: false })
+      .populate([
         { path: "createdBy", select: "userName image -_id" },
         { path: "comments", select: "userName image -_id" },
-      ],
-    });
+      ])
+      .paginate(page);
   } else {
-    posts = await dbService.find({
-      model: PostModel,
-      filter: { isDeleted: false, createdBy: req.user._id },
-      populate: [
-        { path: "createdBy", select: "userName image -_id" },
+    posts = await PostModel.find({ isDeleted: false, createdBy: req.user._id })
+      .populate([
         { path: "comments", select: "userName image -_id" },
-      ],
-    });
+        { path: "createdBy", select: "userName image -_id" },
+      ])
+      .paginate(page);
   }
 
   //query stream
@@ -209,7 +207,7 @@ export const activePosts = asyncHandler(async (req, res, next) => {
   //   results.push({ post, comments });
   // }
 
-  return res.status(200).json({ success: true, data: { posts } });
+  return res.status(200).json({ success: true, posts });
 });
 
 export const freezedPosts = asyncHandler(async (req, res, next) => {

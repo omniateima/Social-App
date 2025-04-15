@@ -51,3 +51,9 @@ export const blockUser = joi
     email: generalField.email.required(),
   })
   .required();
+
+export const friendRequestSchema = joi
+  .object({
+    friendId: generalField.id.required(),
+  })
+  .required();

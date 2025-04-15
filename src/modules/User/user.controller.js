@@ -97,4 +97,18 @@ router.patch(
   userService.blockUser
 );
 
+router.post(
+  "/friend-request/:friendId",
+  authentication(),
+  validation(userValidation.friendRequestSchema),
+  userService.sendFriendRequest
+);
+
+router.post(
+  "/friend-request/:friendId/accept",
+  authentication(),
+  validation(userValidation.friendRequestSchema),
+  userService.acceptFriendRequest
+);
+
 export default router;

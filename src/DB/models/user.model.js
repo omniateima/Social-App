@@ -1,7 +1,6 @@
 import mongoose, { Schema, Types, model } from "mongoose";
 import { hash } from "../../utils/hashing/hash.js";
 
-
 export const genderType = {
   male: "male",
   female: "female",
@@ -109,6 +108,8 @@ const userSchema = new Schema(
       default: 5,
     },
     otpAttemtpsWait: Date,
+    friendRequests: [{ type: Types.ObjectId, ref: "User" }],
+    friends: [{ type: Types.ObjectId, ref: "User" }],
   },
   {
     timestamps: true,
@@ -121,7 +122,6 @@ userSchema.pre("save", function (next) {
   }
   return next();
 });
-
 
 const UserModel = mongoose.model.User || model("User", userSchema);
 export default UserModel;

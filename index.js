@@ -1,13 +1,15 @@
 import express from "express";
 import bootstrap from "./src/app.controller.js";
 
-const app =  express();
+import { runSocket } from "./src/modules/socketio/index.js";
+
+const app = express();
 const port = process.env.PORT;
 
-bootstrap(app,express)
+bootstrap(app, express);
 
-app.listen(port,()=>{
-    console.log('listen to server successfully');
-})
+const server = app.listen(port, () => {
+  console.log("listen to server successfully");
+});
 
-
+runSocket(server);

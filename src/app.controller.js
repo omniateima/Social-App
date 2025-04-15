@@ -10,17 +10,30 @@ import postRouter from "./modules/Posts/post.controller.js";
 import commentRouter from "./modules/Comment/comment.controller.js";
 import adminRouter from "./modules/Admin/admin.controller.js";
 import morgan from "morgan";
+import { rateLimit } from "express-rate-limit";
+
+const limiter = rateLimit({
+  wsindowM: 2 * 60 * 1000, //2minutes
+  limit: 3, //3 per 2 min
+  handler: (req, res, next, options) => {
+    return next(new Error(options.message, { cause: options.statusCode }));
+  },
+  skipFailedRequests: true,
+  // skip: (req, res) => {
+  //   return ["::1", "192.165.0.50"].includes("::1");
+  // },
+});
 
 const bootstrap = async (app, express) => {
   await connectDB();
 
   app.use(express.json());
-  app.use("/uploads", express.static("uploads")); //to serve static files that in uploads so can seen in browser
+  app.use("/upload", express.static("upload")); //to serve static files that in upload so can seen in browser
 
   app.use(cors());
   app.use(morgan("dev"));
+  app.use(limiter);
 
-  app.get("/", (req, res) => res.send("Hello World!"));
   app.use("/auth", authRouter);
   app.use("/user", userRouter);
   app.use("/post", postRouter);

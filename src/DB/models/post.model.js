@@ -57,6 +57,29 @@ postSchema.virtual("comments", {
   localField: "_id",
 });
 
+postSchema.query.paginate = async function (page) {
+  page = page ? page : 1;
+  //limit
+  const limit = 5;
+  //skip
+  const skip = (page - 1) * limit;
+
+  const data = await this.skip(skip).limit(limit);
+  const items = await this.model.countDocuments();
+  const totalPages = Math.ceil(items / limit);
+  const nextPage = Number(page) >= totalPages ? null : Number(page) + 1;
+  const previousPage = Number(page) <= 1 ? null : Number(page) - 1;
+
+  return {
+    data,
+    totalItems: items,
+    totalPages,
+    previousPage,
+    currentPage: Number(page),
+    itemPerPage: data.length,
+    nextPage,
+  };
+};
 
 const PostModel = mongoose.model.Post || model("Post", postSchema);
 export default PostModel;

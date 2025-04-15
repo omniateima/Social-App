@@ -20,7 +20,7 @@
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "express": "^4.21.2",
-    "file-type": "^20.1.0",
+    "express-rate-limit": "^7.5.0",
     "google-auth-library": "^9.15.1",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
